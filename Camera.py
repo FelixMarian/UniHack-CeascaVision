@@ -2,6 +2,7 @@ import cv2
 import time
 import os
 
+#Camera 0 (singura)
 
 folder_name = "images"
 if not os.path.exists(folder_name):
@@ -9,7 +10,7 @@ if not os.path.exists(folder_name):
 
     print(f"Director creat: {folder_name}")
 
-#Verificam ca s-a pornit Camera 0
+#Verificam ca s-a pornit
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
  
