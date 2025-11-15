@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 
+type LoginResponse = {
+    username: string;
+    type: string;
+};
+
 const LoginPage: React.FC = () => {
-    const [email, setEmail] = useState<string>("");
+    const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
@@ -12,10 +17,16 @@ const LoginPage: React.FC = () => {
         setError("");
         setSuccess("");
 
-        if (!email.trim() || !password.trim()) {
-            setError("Te rog completează email și parolă.");
+        if (!username.trim() || !password.trim()) {
+            setError("Te rog completează user și parolă.");
             return;
         }
+
+        // 🔍 DEBUG: ce trimitem la backend
+        console.log("🔍 Trimitem către backend:", {
+            username,
+            password,
+        });
 
         try {
             setLoading(true);
@@ -25,22 +36,43 @@ const LoginPage: React.FC = () => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ username, password }),
             });
 
+            // 🔍 DEBUG: status răspuns
+            console.log("🔍 Status răspuns backend:", res.status);
+
             if (!res.ok) {
-                const errJson = await res.json().catch(() => ({}));
-                throw new Error(errJson.error || "Credențiale invalide sau eroare la login.");
+                const text = await res.text();
+                console.log("🔍 Răspuns EROARE din backend:", text);
+                throw new Error("Credențiale invalide sau eroare la login.");
             }
 
-            // Dacă vrei, poți folosi răspunsul:
-            // const data = await res.json();
+            const data: LoginResponse = await res.json();
 
-            setSuccess("Autentificare reușită!");
-            // Exemplu simplu de redirect (poți schimba ruta):
-            // window.location.href = "/dashboard";
+            // 🔍 DEBUG: ce primim de la backend
+            console.log("🔍 Date primite de la backend:", data);
+
+            // Salvăm în localStorage
+            localStorage.setItem("username", data.username);
+            localStorage.setItem("userType", data.type);
+
+            // 🔍 DEBUG: verificăm ce e în localStorage
+            console.log("✅ username în localStorage:", localStorage.getItem("username"));
+            console.log("✅ userType în localStorage:", localStorage.getItem("userType"));
+
+            setSuccess(`Autentificare reușită ca ${data.type}`);
+
+            // Redirect în funcție de type
+            if (data.type === "Developer") {
+                console.log("➡ Redirect către /dev");
+                window.location.href = "/dev";
+            } else {
+                console.log("➡ Redirect către /acasa");
+                window.location.href = "/acasa";
+            }
         } catch (err) {
-            console.error(err);
+            console.error("❌ Eroare la login:", err);
             if (err instanceof Error) {
                 setError(err.message);
             } else {
@@ -75,7 +107,13 @@ const LoginPage: React.FC = () => {
                 }}
             >
                 <h1 style={{ textAlign: "center", marginBottom: "20px" }}>Login</h1>
-                <p style={{ textAlign: "center", marginBottom: "25px", opacity: 0.9 }}>
+                <p
+                    style={{
+                        textAlign: "center",
+                        marginBottom: "25px",
+                        opacity: 0.9,
+                    }}
+                >
                     Autentifică-te pentru a accesa dashboard-ul.
                 </p>
 
@@ -85,17 +123,21 @@ const LoginPage: React.FC = () => {
                 >
                     <div>
                         <label
-                            htmlFor="email"
-                            style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}
+                            htmlFor="username"
+                            style={{
+                                display: "block",
+                                marginBottom: "5px",
+                                fontWeight: "bold",
+                            }}
                         >
                             User
                         </label>
                         <input
-                            id="email"
-                            type="email"
-                            value={email}
+                            id="username"
+                            type="text"
+                            value={username}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                setEmail(e.target.value)
+                                setUsername(e.target.value)
                             }
                             style={{
                                 width: "100%",
@@ -104,14 +146,18 @@ const LoginPage: React.FC = () => {
                                 border: "1px solid #ccc",
                                 fontSize: "1rem",
                             }}
-                            placeholder="Introdu numele de utilizator"
+                            placeholder="Functionar sau Dev"
                         />
                     </div>
 
                     <div>
                         <label
                             htmlFor="password"
-                            style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}
+                            style={{
+                                display: "block",
+                                marginBottom: "5px",
+                                fontWeight: "bold",
+                            }}
                         >
                             Parolă
                         </label>
@@ -134,12 +180,28 @@ const LoginPage: React.FC = () => {
                     </div>
 
                     {error && (
-                        <p style={{ color: "#ffdddd", backgroundColor: "#802020", padding: "8px 10px", borderRadius: "6px", margin: 0 }}>
+                        <p
+                            style={{
+                                color: "#ffdddd",
+                                backgroundColor: "#802020",
+                                padding: "8px 10px",
+                                borderRadius: "6px",
+                                margin: 0,
+                            }}
+                        >
                             {error}
                         </p>
                     )}
                     {success && (
-                        <p style={{ color: "#ddffdd", backgroundColor: "#206020", padding: "8px 10px", borderRadius: "6px", margin: 0 }}>
+                        <p
+                            style={{
+                                color: "#ddffdd",
+                                backgroundColor: "#206020",
+                                padding: "8px 10px",
+                                borderRadius: "6px",
+                                margin: 0,
+                            }}
+                        >
                             {success}
                         </p>
                     )}

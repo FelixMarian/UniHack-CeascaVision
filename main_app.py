@@ -2,14 +2,15 @@ import time
 import os
 import sys
 import re
-
+import config
 # --- MODIFICARE CHEIE ---
 # Setam variabila de mediu INAINTE de a importa cv2
 # Acest lucru forteaza OpenCV sa foloseasca backend-ul X11 (xcb) in loc de Wayland
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 # --- SFARSIT MODIFICARE ---
 
-import cv2 # Acum importam cv2, dupa ce variabila a fost setata
+import sensor
+import cv2 
 import google.generativeai as genai
 import PIL.Image
 from gtts import gTTS
@@ -43,7 +44,6 @@ COLOR_RED = (0, 0, 255)
 THICKNESS = 2
 
 # --- 2. Functii Utilitare (din scripturile tale) ---
-# (Toate functiile raman neschimbate)
 
 def read_api_key():
     """Citeste cheia API din fisier."""
@@ -125,6 +125,8 @@ def log_document_type(doc_type):
     except Exception as e:
         print(f"Eroare la scrierea in {LOG_TYPE_FILE}: {e}")
 
+
+
 def log_document_content(content, file_path):
     """Salveaza continutul (rezumatul) in fisierul textLogX.txt specific."""
     try:
@@ -186,7 +188,6 @@ Concentreaza-te pe elementele principale: ce se vinde, care e mesajul principal,
         log_document_type("Eroare API")
         log_document_content(str(e), content_log_path)
         return "A aparut o eroare la procesarea imaginii."
-
 
 # --- 4. Functia Principala (Main Loop) ---
 # (Functia main ramane neschimbata)
@@ -267,6 +268,11 @@ def main():
 
             cv2.putText(frame, program_state, POS_STATE, FONT, FONT_SCALE, COLOR_WHITE, THICKNESS)
             cv2.imshow('Live Feed', frame)
+            
+            # Acum senzorul ruleaza non-stop, independent de starea programului
+            object_present = sensor.check_object_presence()
+            sensor.control_led(object_present) # Actualizam LED-ul
+            
             key = cv2.waitKey(1) & 0xFF
 
             if key == ord('1') and program_state == "ASTEPTARE":
@@ -282,9 +288,28 @@ def main():
     finally:
         cap.release()
         cv2.destroyAllWindows()
+        sensor.cleanup_sensor()
         print("Resurse eliberate. Program incheiat.")
 
 
 # --- 5. Punct de Intrare ---
 if __name__ == "__main__":
-    main()
+
+    print("Se porneste aplicatia...")
+    try:
+        print("Se porneste aplicatia...")
+        
+        # Initializam senzorul
+        if not sensor.setup_sensor():
+            # Daca setup-ul esueaza (ex: lipsa sudo), ne oprim.
+            sys.exit(1)
+            
+        # Pornim bucla principala a camerei
+        main()
+        
+    except KeyboardInterrupt:
+        print("\nProgram incheiat manual (Ctrl+C).")
+        sys.exit(0)
+    except Exception as e:
+        print(f"A aparut o eroare neasteptata: {e}")
+        sys.exit(1)

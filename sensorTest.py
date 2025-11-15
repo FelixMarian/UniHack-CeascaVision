@@ -1,47 +1,105 @@
-from gpiozero import LED, Button  # <-- Changed LineSensor to Button
-from time import sleep
+# test_sensor.py
+# Script independent pentru testarea senzorului HC-SR04 si a unui LED
 
-# --- Configuration ---
+import RPi.GPIO as GPIO
+import time
+import config
+import sys
 
-# Set up the GPIO pin for your LED.
-led = LED(18)
-
-# Set up the GPIO pin for your IR Proximity Sensor (e.g., FC-51).
-# We are using the Button class because the sensor's 'OUT' pin
-# goes LOW when it detects an obstacle, just like a button press.
-#
-# --- IR Sensor Wiring ---
-# VCC pin -> 3.3V pin on Pi
-# GND pin -> GND pin on Pi
-# OUT pin -> GPIO 17 on Pi
-sensor = Button(17)  # <-- Changed LineSensor to Button
-
-# --- Main Program ---
-
-print("Obstacle Detector is running...")
-print("Press CTRL+C to stop.")
-
-try:
-    while True:
+def setup_gpio():
+    """Configureaza pinii GPIO pentru senzor si LED."""
+    try:
+        GPIO.setwarnings(False) # Dezactivam avertismentele
+        GPIO.setmode(GPIO.BCM) # Folosim numerotarea BCM
         
-        # sensor.is_pressed will be True when the sensor's
-        # OUT pin goes LOW (which is when it detects an obstacle).
-        if sensor.is_pressed:  # <-- Changed .is_line to .is_pressed
-            # Obstacle is close! Turn the LED on.
-            led.on()
-            print("LED ON - Obstacle detected!   ")
-        else:
-            # Obstacle is far away. Turn the LED off.
-            led.off()
-            # We use \r to print on the same line without scrolling
-            print("LED OFF - All clear.          ", end="\r")
+        # Setup Senzor
+        GPIO.setup(config.PIN_TRIGGER, GPIO.OUT)
+        GPIO.setup(config.PIN_ECHO, GPIO.IN)
+        
+        # Setup LED
+        GPIO.setup(config.PIN_LED, GPIO.OUT)
+        
+        # Initializam pinii
+        GPIO.output(config.PIN_TRIGGER, False)
+        GPIO.output(config.PIN_LED, False)
+        
+        print("Asteptam ca senzorul sa se stabilizeze...")
+        time.sleep(2) # Asteptam 2 secunde
+        print("Senzorul este gata. Se incepe testarea...")
+        print("Apasati Ctrl+C pentru a opri.")
+        
+    except Exception as e:
+        print(f"Eroare la initializarea GPIO: {e}")
+        print("Asigura-te ca rulezi scriptul cu 'sudo' (sudo python test_sensor.py)")
+        sys.exit(1)
 
-        # Wait for a short time before taking the next reading
-        sleep(0.1)
+def get_distance_meters():
+    """Masoara si returneaza distanta in metri. (Copiat din sensor.py)"""
+    
+    # Trimitem un puls de 10us
+    GPIO.output(config.PIN_TRIGGER, True)
+    time.sleep(0.00001)
+    GPIO.output(config.PIN_TRIGGER, False)
 
-except KeyboardInterrupt:
-    # This part runs when you press CTRL+C to stop the script
-    print("\nStopping program...")
-    led.off() # Turn the LED off
-    sensor.close() # Clean up sensor resources
-    print("Goodbye!")
+    start_time = time.time()
+    stop_time = time.time()
+    
+    timeout = time.time() + 0.1 # Timeout de 100ms
+
+    # Asteptam ca ECHO sa devina HIGH
+    while GPIO.input(config.PIN_ECHO) == 0:
+        start_time = time.time()
+        if start_time > timeout:
+            # print("Eroare senzor: Timeout ECHO HIGH") # Decomenteaza pt debug
+            return None # Eroare de citire
+
+    # Asteptam ca ECHO sa revina la LOW
+    timeout = time.time() + 0.1 # Resetam timeout-ul
+    while GPIO.input(config.PIN_ECHO) == 1:
+        stop_time = time.time()
+        if stop_time > timeout:
+            # print("Eroare senzor: Timeout ECHO LOW") # Decomenteaza pt debug
+            return None # Eroare de citire
+
+    # Calculam distanta
+    time_elapsed = stop_time - start_time
+    distance_m = (time_elapsed * 343) / 2
+    
+    return distance_m
+
+def main_loop():
+    """Ruleaza bucla de testare."""
+    try:
+        while True:
+            distance = get_distance_meters()
+            
+            if distance is not None:
+                # Afisam distanta in consola
+                print(f"Distanta: {distance:.2f} m")
+                
+                # Verificam pragul
+                if distance < config.DISTANCE_THRESHOLD_METERS:
+                    # Obiect detectat -> Aprindem LED
+                    GPIO.output(config.PIN_LED, True)
+                else:
+                    # Obiect prea departe -> Stingem LED
+                    GPIO.output(config.PIN_LED, False)
+            else:
+                # Eroare la citire -> Stingem LED
+                print("Eroare citire senzor.")
+                GPIO.output(config.PIN_LED, False)
+            
+            # Asteptam putin inainte de urmatoarea citire
+            time.sleep(0.2) 
+
+    except KeyboardInterrupt:
+        print("\nTest incheiat.")
+    finally:
+        # Curatam pinii GPIO indiferent de cum se iese
+        print("Curatare pini GPIO.")
+        GPIO.cleanup()
+
+# --- Punct de Intrare ---
+if __name__ == "__main__":
+    setup_gpio()
+    main_loop()
