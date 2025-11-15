@@ -8,7 +8,7 @@ LOG_CONTENT_FOLDER = "content_logs"
 LOG_TYPE_FILE = "typesLogs.txt"
 
 # === Setari Model Gemini ===
-MODEL_NAME = 'gemini-2-light'
+MODEL_NAME = 'gemini-2.5-light'
 
 # === Setari TTS (Text-to-Speech) ===
 LANGUAGE = 'ro'

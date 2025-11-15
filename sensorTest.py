@@ -1,4 +1,4 @@
-# test_sensor.py
+	# test_sensor.py
 # Script independent pentru testarea senzorului HC-SR04 si a unui LED
 
 import RPi.GPIO as GPIO

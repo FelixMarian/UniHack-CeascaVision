@@ -8,7 +8,7 @@ import config
 # Acest lucru forteaza OpenCV sa foloseasca backend-ul X11 (xcb) in loc de Wayland
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 # --- SFARSIT MODIFICARE ---
-
+import sendData
 import sensor
 import cv2 
 import google.generativeai as genai
@@ -150,8 +150,8 @@ def process_image_with_gemini(model, image_path, content_log_path):
         return "Eroare la incarcarea imaginii."
 
     prompt_text = f"""
-Analizeaza aceasta imagine. Raspunsul tau trebuie sa urmeze STRICT acest format:
-LINIA 1: Doar tipul documentului (ex: Factura, Aviz, Scrisoare, Email, Notite).
+Analizeaza aceasta imagine. Raspunsul tau trebuie sa urmeze STRICT acest format (fara sa scrie prefixul [LINIA 1]):
+[LINIA 1] Doar tipul documentului care sunt: Factura, Oferte si Diverse.
 RESTUL LINIILOR: Un rezumat detaliat al continutului textului din imagine.
 
 INSTRUCTIUNE IMPORTANTA PENTRU REZUMAT:
@@ -170,7 +170,7 @@ Concentreaza-te pe elementele principale: ce se vinde, care e mesajul principal,
         doc_content = raspuns_text 
 
         if len(parti) == 2:
-            doc_type = parti[0].strip()
+            doc_type = parti[0].strip() + " " + datetime.now().strftime("%Y-%m-%d %H:%M")
             doc_content = parti[1].strip()
             print(f"Gemini a identificat tipul: {doc_type}")
         else:
@@ -251,7 +251,7 @@ def main():
                     
                     try:
                         content_for_tts = process_image_with_gemini(model, img_path, log_path)
-                        
+                        sendData.process_logs_and_update()
                         program_state = "REDARE AUDIO..."
                         cv2.putText(frame, program_state, POS_STATE, FONT, FONT_SCALE, COLOR_WHITE, THICKNESS)
                         cv2.imshow('Live Feed', frame)
@@ -270,8 +270,8 @@ def main():
             cv2.imshow('Live Feed', frame)
             
             # Acum senzorul ruleaza non-stop, independent de starea programului
-            object_present = sensor.check_object_presence()
-            sensor.control_led(object_present) # Actualizam LED-ul
+            #object_present = sensor.check_object_presence()
+            #sensor.control_led(object_present) # Actualizam LED-ul
             
             key = cv2.waitKey(1) & 0xFF
 
@@ -296,20 +296,5 @@ def main():
 if __name__ == "__main__":
 
     print("Se porneste aplicatia...")
-    try:
-        print("Se porneste aplicatia...")
-        
-        # Initializam senzorul
-        if not sensor.setup_sensor():
-            # Daca setup-ul esueaza (ex: lipsa sudo), ne oprim.
-            sys.exit(1)
-            
-        # Pornim bucla principala a camerei
-        main()
-        
-    except KeyboardInterrupt:
-        print("\nProgram incheiat manual (Ctrl+C).")
-        sys.exit(0)
-    except Exception as e:
-        print(f"A aparut o eroare neasteptata: {e}")
-        sys.exit(1)
+    main()
+     
