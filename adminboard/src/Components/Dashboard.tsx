@@ -8,7 +8,7 @@ import {
     ResponsiveContainer,
 } from "recharts";
 
-// Tipul datelor care vin din backend
+// Tipul datelor care vin din backend (din SQLite prin /api/dashboard)
 type DashboardApiData = {
     totalPeople: number;
     todayPeople: number;
@@ -16,11 +16,7 @@ type DashboardApiData = {
 };
 
 // Tipul complet folosit în componentă
-type DashboardData = {
-    totalPeople: number;
-    todayPeople: number;
-    categories: { Oferte: number; Facturi: number; Diverse: number };
-};
+type DashboardData = DashboardApiData;
 
 const Dashboard: React.FC = () => {
     const [data, setData] = useState<DashboardData>({
@@ -28,6 +24,9 @@ const Dashboard: React.FC = () => {
         todayPeople: 0,
         categories: { Oferte: 0, Facturi: 0, Diverse: 0 },
     });
+
+    const [dashLoading, setDashLoading] = useState<boolean>(true);
+    const [dashError, setDashError] = useState<string>("");
 
     // Modal form state
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -37,22 +36,29 @@ const Dashboard: React.FC = () => {
     const [error, setError] = useState<string>("");
     const [success, setSuccess] = useState<string>("");
 
-    // ===================== FETCH DASHBOARD DATA =====================
+    // ===================== FETCH DASHBOARD DATA DIN SQLITE =====================
     useEffect(() => {
         const loadDashboard = async () => {
             try {
+                setDashError("");
+                setDashLoading(true);
+
                 const res = await fetch("http://localhost:5000/api/dashboard");
                 if (!res.ok) {
                     console.error("Eroare dashboard:", res.status);
+                    setDashError("Nu s-au putut încărca datele din dashboard.");
                     return;
                 }
 
                 const json: DashboardApiData = await res.json();
-                console.log("📊 Dashboard from backend:", json);
+                console.log("📊 Dashboard from backend (DB):", json);
 
                 setData(json);
             } catch (err) {
                 console.error("Eroare la fetch dashboard:", err);
+                setDashError("A apărut o eroare la încărcarea dashboard-ului.");
+            } finally {
+                setDashLoading(false);
             }
         };
 
@@ -105,11 +111,28 @@ const Dashboard: React.FC = () => {
 
     // ===================== LOGOUT =====================
     const handleLogout = () => {
-        // ștergem tipul de user (și username, ca bonus)
         localStorage.removeItem("userType");
         localStorage.removeItem("username");
         window.location.href = "/";
     };
+
+    if (dashLoading) {
+        return (
+            <div
+                style={{
+                    backgroundColor: "#007BFF",
+                    minHeight: "100vh",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "Arial, sans-serif",
+                }}
+            >
+                Se încarcă dashboard-ul...
+            </div>
+        );
+    }
 
     return (
         <div
@@ -126,9 +149,15 @@ const Dashboard: React.FC = () => {
             }}
         >
             {/* Header */}
-            <h1 style={{ textAlign: "center", marginBottom: "40px" }}>
+            <h1 style={{ textAlign: "center", marginBottom: "10px" }}>
                 Dashboard Oameni Ajutați
             </h1>
+
+            {dashError && (
+                <p style={{ textAlign: "center", color: "yellow", marginBottom: "20px" }}>
+                    {dashError}
+                </p>
+            )}
 
             {/* Statistici generale */}
             <div
