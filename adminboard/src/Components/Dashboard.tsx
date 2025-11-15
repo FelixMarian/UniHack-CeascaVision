@@ -1,157 +1,202 @@
-import React, { useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useEffect, useState } from "react";
+import {
+    PieChart,
+    Pie,
+    Cell,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+} from "recharts";
 
-// Tip pentru datele de dashboard
+// Tipul datelor care vin din backend
+type DashboardApiData = {
+    totalPeople: number;
+    todayPeople: number;
+    categories: { Oferte: number; Facturi: number; Diverse: number };
+};
+
+// Tipul complet folosit în componentă
 type DashboardData = {
     totalPeople: number;
     todayPeople: number;
-    genderDistribution: { M: number; F: number };
     categories: { Oferte: number; Facturi: number; Diverse: number };
 };
 
 const Dashboard: React.FC = () => {
     const [data, setData] = useState<DashboardData>({
-        totalPeople: 13,
-        todayPeople: 30,
-        genderDistribution: { M: 14, F: 16 },
-        categories: { Oferte: 4, Facturi: 7, Diverse: 19 }
+        totalPeople: 0,
+        todayPeople: 0,
+        categories: { Oferte: 0, Facturi: 0, Diverse: 0 },
     });
 
-    // State pentru modal + formular
+    // Modal form state
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-    const [problemTitle, setProblemTitle] = useState<string>('');
-    const [problemMessage, setProblemMessage] = useState<string>('');
+    const [problemTitle, setProblemTitle] = useState<string>("");
+    const [problemMessage, setProblemMessage] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string>('');
-    const [success, setSuccess] = useState<string>('');
+    const [error, setError] = useState<string>("");
+    const [success, setSuccess] = useState<string>("");
 
+    // ===================== FETCH DASHBOARD DATA =====================
     useEffect(() => {
-        fetch('https://exemplu.com/api/dashboard')
-            .then(res => res.json())
-            .then((json: DashboardData) => setData(json))
-            .catch(err => console.error(err));
+        const loadDashboard = async () => {
+            try {
+                const res = await fetch("http://localhost:5000/api/dashboard");
+                if (!res.ok) {
+                    console.error("Eroare dashboard:", res.status);
+                    return;
+                }
+
+                const json: DashboardApiData = await res.json();
+                console.log("📊 Dashboard from backend:", json);
+
+                setData(json);
+            } catch (err) {
+                console.error("Eroare la fetch dashboard:", err);
+            }
+        };
+
+        loadDashboard();
     }, []);
 
-    const genderData = [
-        { name: 'Masculin', value: data.genderDistribution.M },
-        { name: 'Feminin', value: data.genderDistribution.F }
-    ];
-
     const categoriesData = [
-        { name: 'Oferte', value: data.categories.Oferte },
-        { name: 'Facturi', value: data.categories.Facturi },
-        { name: 'Diverse', value: data.categories.Diverse }
+        { name: "Oferte", value: data.categories.Oferte },
+        { name: "Facturi", value: data.categories.Facturi },
+        { name: "Diverse", value: data.categories.Diverse },
     ];
 
-    const genderColors = ['#3399ff', '#66d9ff'];
-    const categoryColors = ['#00CFFF', '#007BFF', '#6dbdda'];
+    const categoryColors = ["#00CFFF", "#007BFF", "#6dbdda"];
 
-    // Trimite problema către backend
+    // ===================== SUBMIT PROBLEM =====================
     const handleSubmitProblem = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
+        setError("");
+        setSuccess("");
 
         if (!problemTitle.trim() || !problemMessage.trim()) {
-            setError('Te rog completează Titlu și Mesaj.');
+            setError("Te rog completează Titlu și Mesaj.");
             return;
         }
 
         try {
             setLoading(true);
-            const res = await fetch('http://localhost:5000/api/problems', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title: problemTitle,
-                    message: problemMessage
-                })
+            const res = await fetch("http://localhost:5000/api/problems", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: problemTitle, message: problemMessage }),
             });
 
             if (!res.ok) {
                 const errJson = await res.json().catch(() => ({}));
-                throw new Error(errJson.error || 'Eroare la trimiterea problemei.');
+                throw new Error(errJson.error || "Eroare la trimitere.");
             }
 
-            await res.json(); // poți folosi răspunsul dacă vrei
-
-            setSuccess('Problema a fost trimisă cu succes!');
-            setProblemTitle('');
-            setProblemMessage('');
-            // setIsModalOpen(false); // dacă vrei să se închidă automat
+            setSuccess("Problema a fost trimisă!");
+            setProblemTitle("");
+            setProblemMessage("");
         } catch (err) {
             console.error(err);
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('A apărut o eroare.');
-            }
+            if (err instanceof Error) setError(err.message);
+            else setError("A apărut o eroare.");
         } finally {
             setLoading(false);
         }
     };
 
+    // ===================== LOGOUT =====================
+    const handleLogout = () => {
+        // ștergem tipul de user (și username, ca bonus)
+        localStorage.removeItem("userType");
+        localStorage.removeItem("username");
+        window.location.href = "/";
+    };
+
     return (
-        <div style={{
-            backgroundColor: '#007BFF',
-            minHeight: '100vh',
-            padding: '50px',
-            color: 'white',
-            fontFamily: 'Arial, sans-serif',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '50px',
-            overflowX: "hidden"
-        }}>
+        <div
+            style={{
+                backgroundColor: "#007BFF",
+                minHeight: "100vh",
+                padding: "50px",
+                color: "white",
+                fontFamily: "Arial, sans-serif",
+                display: "flex",
+                flexDirection: "column",
+                gap: "50px",
+                overflowX: "hidden",
+            }}
+        >
             {/* Header */}
-            <h1 style={{ textAlign: 'center', marginBottom: '40px' }}>Dashboard Oameni Ajutați</h1>
+            <h1 style={{ textAlign: "center", marginBottom: "40px" }}>
+                Dashboard Oameni Ajutați
+            </h1>
 
             {/* Statistici generale */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-around',
-                gap: '20px',
-                flexWrap: 'wrap',
-            }}>
-                <div style={{
-                    backgroundColor: '#0056b3',
-                    borderRadius: '10px',
-                    padding: '30px 50px',
-                    textAlign: 'center',
-                    flex: 1,
-                    minWidth: '250px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
-                }}>
-                    <p style={{ margin: 0, fontWeight: 'bold' }}>Persoane ajutate până acum</p>
-                    <p style={{ margin: 0, fontSize: '2rem' }}>{data.totalPeople}</p>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-around",
+                    gap: "20px",
+                    flexWrap: "wrap",
+                }}
+            >
+                <div
+                    style={{
+                        backgroundColor: "#0056b3",
+                        borderRadius: "10px",
+                        padding: "30px 50px",
+                        textAlign: "center",
+                        flex: 1,
+                        minWidth: "250px",
+                        boxShadow: "0 4px 6px rgba(0,0,0,0.2)",
+                    }}
+                >
+                    <p style={{ margin: 0, fontWeight: "bold" }}>
+                        Persoane ajutate până acum
+                    </p>
+                    <p style={{ margin: 0, fontSize: "2rem" }}>{data.totalPeople}</p>
                 </div>
 
-                <div style={{
-                    backgroundColor: '#0056b3',
-                    borderRadius: '10px',
-                    padding: '30px 50px',
-                    textAlign: 'center',
-                    flex: 1,
-                    minWidth: '250px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
-                }}>
-                    <p style={{ margin: 0, fontWeight: 'bold' }}>Persoane ajutate astăzi</p>
-                    <p style={{ margin: 0, fontSize: '2rem' }}>{data.todayPeople}</p>
+                <div
+                    style={{
+                        backgroundColor: "#0056b3",
+                        borderRadius: "10px",
+                        padding: "30px 50px",
+                        textAlign: "center",
+                        flex: 1,
+                        minWidth: "250px",
+                        boxShadow: "0 4px 6px rgba(0,0,0,0.2)",
+                    }}
+                >
+                    <p style={{ margin: 0, fontWeight: "bold" }}>
+                        Persoane ajutate astăzi
+                    </p>
+                    <p style={{ margin: 0, fontSize: "2rem" }}>{data.todayPeople}</p>
                 </div>
             </div>
 
-            {/* Grafice */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-around',
-                gap: '50px',
-                flexWrap: 'wrap',
-            }}>
+            {/* Grafice + butoane */}
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-around",
+                    gap: "50px",
+                    flexWrap: "wrap",
+                }}
+            >
                 {/* Categories Pie Chart */}
-                <div style={{ backgroundColor: '#0056b3', borderRadius: '10px', padding: '20px', flex: 1, minWidth: '300px', height: '300px' }}>
-                    <h3 style={{ textAlign: 'center', marginBottom: '10px' }}>Categorii</h3>
+                <div
+                    style={{
+                        backgroundColor: "#0056b3",
+                        borderRadius: "10px",
+                        padding: "20px",
+                        flex: 1,
+                        minWidth: "300px",
+                        height: "300px",
+                    }}
+                >
+                    <h3 style={{ textAlign: "center", marginBottom: "10px" }}>
+                        Categorii
+                    </h3>
                     <ResponsiveContainer width="100%" height="80%">
                         <PieChart>
                             <Pie
@@ -162,7 +207,7 @@ const Dashboard: React.FC = () => {
                                 label
                             >
                                 {categoriesData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={categoryColors[index]} />
+                                    <Cell key={`cat-${index}`} fill={categoryColors[index]} />
                                 ))}
                             </Pie>
                             <Tooltip />
@@ -171,139 +216,180 @@ const Dashboard: React.FC = () => {
                     </ResponsiveContainer>
                 </div>
 
-                {/* Buton Raise a Problem */}
-                <div style={{ textAlign: 'center', marginTop: '20vh' }}>
+                {/* Butoane Raportează + Logout */}
+                <div
+                    style={{
+                        textAlign: "center",
+                        marginTop: "20vh",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "15px",
+                        alignItems: "center",
+                    }}
+                >
                     <button
                         style={{
-                            backgroundColor: '#ff4d4d',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            padding: '15px 30px',
-                            fontSize: '1rem',
-                            cursor: 'pointer',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.2)',
-                            transition: '0.3s'
+                            backgroundColor: "#ff4d4d",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            padding: "15px 30px",
+                            fontSize: "1rem",
+                            cursor: "pointer",
+                            boxShadow: "0 4px 6px rgba(0,0,0,0.2)",
+                            transition: "0.3s",
                         }}
                         onClick={() => setIsModalOpen(true)}
                     >
-                        Raise a Problem
+                        Raportează o problemă
+                    </button>
+
+                    <button
+                        style={{
+                            backgroundColor: "#222",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            padding: "10px 25px",
+                            fontSize: "0.95rem",
+                            cursor: "pointer",
+                            boxShadow: "0 3px 5px rgba(0,0,0,0.25)",
+                            transition: "0.3s",
+                        }}
+                        onClick={handleLogout}
+                    >
+                        Logout
                     </button>
                 </div>
             </div>
 
-            {/* Modal Raise a Problem */}
+            {/* Modal */}
             {isModalOpen && (
                 <div
                     style={{
-                        position: 'fixed',
+                        position: "fixed",
                         inset: 0,
-                        backgroundColor: 'rgba(0,0,0,0.6)',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        zIndex: 9999
+                        backgroundColor: "rgba(0,0,0,0.6)",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
                     }}
-                    onClick={() => setIsModalOpen(false)} // click pe fundal închide modalul
+                    onClick={() => setIsModalOpen(false)}
                 >
                     <div
                         style={{
-                            backgroundColor: 'white',
-                            color: '#333',
-                            borderRadius: '10px',
-                            padding: '30px',
-                            width: '90%',
-                            maxWidth: '500px',
-                            boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                            backgroundColor: "white",
+                            color: "#333",
+                            borderRadius: "10px",
+                            padding: "30px",
+                            width: "90%",
+                            maxWidth: "500px",
+                            boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
                         }}
-                        onClick={(e) => e.stopPropagation()} // prevenim închiderea la click în interior
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <h2 style={{ marginTop: 0, marginBottom: '20px', textAlign: 'center' }}>
+                        <h2
+                            style={{
+                                marginTop: 0,
+                                marginBottom: "20px",
+                                textAlign: "center",
+                            }}
+                        >
                             Raportează o problemă
                         </h2>
 
-                        <form onSubmit={handleSubmitProblem} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        <form
+                            onSubmit={handleSubmitProblem}
+                            style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+                        >
                             <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                <label
+                                    style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}
+                                >
                                     Titlu
                                 </label>
                                 <input
                                     type="text"
                                     value={problemTitle}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProblemTitle(e.target.value)}
+                                    onChange={(e) => setProblemTitle(e.target.value)}
                                     style={{
-                                        width: '100%',
-                                        padding: '10px',
-                                        borderRadius: '6px',
-                                        border: '1px solid #ccc',
-                                        fontSize: '1rem'
+                                        width: "100%",
+                                        padding: "10px",
+                                        borderRadius: "6px",
+                                        border: "1px solid #ccc",
+                                        fontSize: "1rem",
                                     }}
-                                    placeholder="Ex: Problema cu formularul de înscriere"
+                                    placeholder="Titlul problemei"
                                 />
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                <label
+                                    style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}
+                                >
                                     Mesaj
                                 </label>
                                 <textarea
                                     value={problemMessage}
-                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setProblemMessage(e.target.value)}
+                                    onChange={(e) => setProblemMessage(e.target.value)}
                                     rows={4}
                                     style={{
-                                        width: '100%',
-                                        padding: '10px',
-                                        borderRadius: '6px',
-                                        border: '1px solid #ccc',
-                                        fontSize: '1rem',
-                                        resize: 'vertical'
+                                        width: "100%",
+                                        padding: "10px",
+                                        borderRadius: "6px",
+                                        border: "1px solid #ccc",
+                                        fontSize: "1rem",
+                                        resize: "vertical",
                                     }}
-                                    placeholder="Descrie problema cât mai clar..."
+                                    placeholder="Descrie problema..."
                                 />
                             </div>
 
-                            {error && (
-                                <p style={{ color: 'red', margin: 0 }}>{error}</p>
-                            )}
-                            {success && (
-                                <p style={{ color: 'green', margin: 0 }}>{success}</p>
-                            )}
+                            {error && <p style={{ color: "red" }}>{error}</p>}
+                            {success && <p style={{ color: "green" }}>{success}</p>}
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                    gap: "10px",
+                                }}
+                            >
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
                                     style={{
-                                        padding: '10px 20px',
-                                        borderRadius: '6px',
-                                        border: 'none',
-                                        backgroundColor: '#ccc',
-                                        cursor: 'pointer'
+                                        padding: "10px 20px",
+                                        borderRadius: "6px",
+                                        border: "none",
+                                        backgroundColor: "#ccc",
+                                        cursor: "pointer",
                                     }}
                                 >
                                     Închide
                                 </button>
+
                                 <button
                                     type="submit"
                                     disabled={loading}
                                     style={{
-                                        padding: '10px 20px',
-                                        borderRadius: '6px',
-                                        border: 'none',
-                                        backgroundColor: '#007BFF',
-                                        color: 'white',
-                                        cursor: 'pointer',
-                                        opacity: loading ? 0.7 : 1
+                                        padding: "10px 20px",
+                                        borderRadius: "6px",
+                                        border: "none",
+                                        backgroundColor: "#007BFF",
+                                        color: "white",
+                                        cursor: "pointer",
+                                        opacity: loading ? 0.7 : 1,
                                     }}
                                 >
-                                    {loading ? 'Se trimite...' : 'Trimite'}
+                                    {loading ? "Se trimite..." : "Trimite"}
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
-
         </div>
     );
 };

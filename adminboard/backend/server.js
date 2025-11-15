@@ -224,6 +224,10 @@ app.post("/api/dashboard", (req, res) => {
     res.json({ success: true, message: "Dashboard updated." });
 });
 
+// =============== GET DASHBOARD DATA ===============
+app.get("/api/dashboard", (req, res) => {
+    res.json(dashboardData);
+});
 
 // =============== PORNIRE SERVER ===============
 app.listen(PORT, () => {

@@ -5,7 +5,7 @@ type Problem = {
     title: string;
     message: string;
     created_at: string;
-    resolved?: number; // 0 sau 1 (opțional)
+    resolved?: number;
 };
 
 const ProblemsTable: React.FC = () => {
@@ -37,7 +37,7 @@ const ProblemsTable: React.FC = () => {
             method: "DELETE"
         });
 
-        setProblems((prev) => prev.filter(p => p.id !== id));
+        setProblems(prev => prev.filter(p => p.id !== id));
     };
 
     // Marcare ca rezolvat
@@ -48,11 +48,16 @@ const ProblemsTable: React.FC = () => {
             body: JSON.stringify({ resolved: 1 })
         });
 
-        setProblems((prev) =>
-            prev.map(p =>
-                p.id === id ? { ...p, resolved: 1 } : p
-            )
+        setProblems(prev =>
+            prev.map(p => (p.id === id ? { ...p, resolved: 1 } : p))
         );
+    };
+
+    // 🔐 LOGOUT BUTTON (exact ca în Dashboard)
+    const handleLogout = () => {
+        localStorage.removeItem("userType");
+        localStorage.removeItem("username");
+        window.location.href = "/";
     };
 
     if (loading) {
@@ -62,72 +67,101 @@ const ProblemsTable: React.FC = () => {
     return (
         <div
             style={{
-        backgroundColor: "#007BFF",
-            minHeight: "100vh",
-            padding: "40px",
-            color: "white",
-            fontFamily: "Arial",
-    }}
->
-    <h1 style={{ textAlign: "center", marginBottom: "30px" }}>Lista Problemelor</h1>
+                backgroundColor: "#007BFF",
+                minHeight: "100vh",
+                padding: "40px",
+                color: "white",
+                fontFamily: "Arial",
+            }}
+        >
+            <h1 style={{ textAlign: "center", marginBottom: "20px" }}>
+                Lista Problemelor
+            </h1>
 
-    {error && (
-        <p style={{ textAlign: "center", color: "yellow" }}>{error}</p>
-    )}
+            {/* 🔥 BUTON LOGOUT IDENTIC */}
+            <div style={{ textAlign: "center", marginBottom: "30px" }}>
+                <button
+                    onClick={handleLogout}
+                    style={{
+                        backgroundColor: "#222",
+                        color: "white",
+                        border: "none",
+                        padding: "10px 25px",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontSize: "0.95rem",
+                        boxShadow: "0 3px 5px rgba(0,0,0,0.25)",
+                        transition: "0.3s",
+                    }}
+                >
+                    Logout
+                </button>
+            </div>
 
-    <div
-        style={{
-        overflowX: "auto",
-            backgroundColor: "#0056b3",
-            padding: "20px",
-            borderRadius: "12px",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
-    }}
->
-    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-    <thead>
-        <tr style={{ backgroundColor: "#003f88" }}>
-    <th style={thStyle}>Titlu</th>
-        <th style={thStyle}>Descriere</th>
-        <th style={thStyle}>Acțiuni</th>
-        </tr>
-        </thead>
+            {error && (
+                <p style={{ textAlign: "center", color: "yellow" }}>{error}</p>
+            )}
 
-        <tbody>
-        {problems.map((p) => (
-                <tr key={p.id} style={{ backgroundColor: p.resolved ? "#338a3e" : "transparent" }}>
-    <td style={tdStyle}>{p.title}</td>
-        <td style={tdStyle}>{p.message}</td>
-        <td style={tdStyle}>
-    <div style={{ display: "flex", gap: "10px" }}>
-    <button
-        onClick={() => handleResolve(p.id)}
-    style={{
-    ...btnStyle,
-            backgroundColor: "#4CAF50"
-    }}
->
-    Rezolvat
-    </button>
+            <div
+                style={{
+                    overflowX: "auto",
+                    backgroundColor: "#0056b3",
+                    padding: "20px",
+                    borderRadius: "12px",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
+                }}
+            >
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                    <tr style={{ backgroundColor: "#003f88" }}>
+                        <th style={thStyle}>Titlu</th>
+                        <th style={thStyle}>Descriere</th>
+                        <th style={thStyle}>Acțiuni</th>
+                    </tr>
+                    </thead>
 
-    <button
-    onClick={() => handleDelete(p.id)}
-    style={{
-    ...btnStyle,
-            backgroundColor: "#ff4d4d"
-    }}
->
-    Șterge
-    </button>
-    </div>
-    </td>
-    </tr>
-))}
-    </tbody>
-    </table>
-    </div>
-    </div>
-);
+                    <tbody>
+                    {problems.map((p) => (
+                        <tr
+                            key={p.id}
+                            style={{
+                                backgroundColor: p.resolved
+                                    ? "#338a3e"
+                                    : "transparent",
+                            }}
+                        >
+                            <td style={tdStyle}>{p.title}</td>
+                            <td style={tdStyle}>{p.message}</td>
+                            <td style={tdStyle}>
+                                <div style={{ display: "flex", gap: "10px" }}>
+                                    <button
+                                        onClick={() => handleResolve(p.id)}
+                                        style={{
+                                            ...btnStyle,
+                                            backgroundColor: "#4CAF50",
+                                        }}
+                                    >
+                                        Rezolvat
+                                    </button>
+
+                                    <button
+                                        onClick={() => handleDelete(p.id)}
+                                        style={{
+                                            ...btnStyle,
+                                            backgroundColor: "#ff4d4d",
+                                        }}
+                                    >
+                                        Șterge
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
 };
 
 const thStyle: React.CSSProperties = {
