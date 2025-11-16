@@ -287,7 +287,7 @@ app.post("/api/dashboard", (req, res) => {
 // =============== GET DASHBOARD DATA (DIN SQLITE) ===============
 app.get("/api/dashboard", (req, res) => {
     db.get(
-        "SELECT totalPeople, todayPeople, oferte, facturi, diverse FROM dashboard WHERE id = 1",
+        "SELECT totalPeople, todayPeople, oferte, facturix, diverse FROM dashboard WHERE id = 1",
         [],
         (err, row) => {
             if (err) {

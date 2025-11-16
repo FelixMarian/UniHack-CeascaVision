@@ -10,7 +10,7 @@ def process_logs_and_update():
     
     input_file = "typesLogs.txt"
     output_file = "update.txt" # Așa cum ai cerut
-    api_url = "http://10.212.159.4:5000/api/dashboard"
+    api_url = "http://10.206.234.4:5000/api/dashboard"
 
     category_counts = {}
     total_lines = 0

@@ -15,7 +15,7 @@ def setup_gpio():
         GPIO.setup(config.PIN_TRIGGER, GPIO.OUT)
         GPIO.setup(config.PIN_ECHO, GPIO.IN)
         GPIO.setup(config.PIN_LED, GPIO.OUT)
-        #GPIO.setup(config.PIN_RESET_BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(config.BUTTON_RESET, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         
         GPIO.output(config.PIN_TRIGGER, False)
         GPIO.output(config.PIN_LED, False)
@@ -78,7 +78,7 @@ def main_loop():
             # 1. Citim intrarile (senzor si buton)
             distance = get_distance_meters()
             is_object_detected = (distance is not None and distance < config.DISTANCE_THRESHOLD_METERS)
-            #is_reset_pressed = (GPIO.input(config.PIN_RESET_BUTTON) == GPIO.LOW)
+            is_reset_pressed = (GPIO.input(config.BUTTON_RESET) == GPIO.LOW)
 
             # --- Logica State Machine ---
 
@@ -143,10 +143,12 @@ def main_loop():
                 GPIO.output(config.PIN_LED, False) # Oprire semnalul
                 # Stare de test. Asteptam reset manual.
                 time_cooldown = time.time() - time_start_cooldown
-                if time_cooldown > 15:
+                if time_cooldown > 15 or GPIO.input(config.BUTTON_RESET) == GPIO.HIGH: #adaugam button click pt exits
                     current_state = STATE_DETECTING
                     print(f"Buton RESET apasat! Sistemul revine in {current_state}.")
                     time.sleep(0.5) 
+                    GPIO.cleanup()
+                    sys.exit()
                 else:
                     print(f"Cooldown activat de: {time_cooldown}s")
             

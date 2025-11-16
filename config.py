@@ -29,8 +29,9 @@ THICKNESS = 2
 PIN_TRIGGER = 18
 PIN_ECHO = 24
 PIN_LED = 25 # Pinul pentru LED-ul de test
+BUTTON_RESET = 21
 # Pragul in metri (1.5 metri)
-DISTANCE_THRESHOLD_METERS = 0.4
+DISTANCE_THRESHOLD_METERS = 1.0
 
 # --- Logica State Machine ---
 
@@ -44,4 +45,4 @@ ACTIVATION_TIME_SECONDS = 5
 
 # 3. Durata Redare (Lock-on Time)
 # Cat timp (in secunde) va rula MP3-ul odata ce redarea este blocata?
-PLAY_DURATION_SECONDS = 25.0 # Seteaza la lungimea MP3-ului tau
+PLAY_DURATION_SECONDS = 22.0 # Seteaza la lungimea MP3-ului tau

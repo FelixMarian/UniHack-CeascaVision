@@ -151,14 +151,15 @@ def process_image_with_gemini(model, image_path, content_log_path):
         return "Eroare la incarcarea imaginii."
 
     prompt_text = f"""
-Analizeaza aceasta imagine. Raspunsul tau trebuie sa urmeze STRICT acest format iar la final sa adauge "daca mai sunt alte intebari, daca nu poti pleca" (fara sa scrie prefixul [LINIA 1]):
-[LINIA 1] Doar tipul documentului care sunt: Factura, Oferte si Diverse.
+Analizeaza aceasta imagine. Raspunsul tau trebuie sa urmeze STRICT acest format iar la final sa adauge "daca mai sunt alte intebari, daca nu poti pleca":
+Sa se evite citirea "[LINIA 1]".
+[LINIA 1] Doar tipul documentului care sunt: Facturi, Oferte si Diverse .
 RESTUL LINIILOR: Un rezumat detaliat al continutului textului din imagine.
 
 INSTRUCTIUNE IMPORTANTA PENTRU REZUMAT:
 Evită cu strictețe dezvaluirea oricaror date personale, cum ar fi nume complete, adrese poștale complete, CNP-uri, numere de telefon sau adrese de email.
 Menționează doar existența lor generic (de ex. "se observă o adresă de livrare", "conține un CNP", "sunt listate datele de contact ale clientului").
-Concentreaza-te pe elementele principale: ce se vinde, care e mesajul principal, care sunt sumele (daca e o factura), etc.
+Concentreaza-te pe elementele principale: ce se vinde, care e mesajul principal, care sunt sumele (daca sunt facturi), etc.
 """
 
     try:
@@ -399,6 +400,7 @@ def main():
                         print(f"Eroare majora in bucla de procesare: {e}")
                     
                     print("Procesare terminata. Se revine la ASTEPTARE.")
+                    sys.exit(1)
                     program_state = "ASTEPTARE"
 
 
@@ -409,7 +411,8 @@ def main():
             #object_present = sensor.check_object_presence()
             #sensor.control_led(object_present) # Actualizam LED-ul
             
-            key = cv2.waitKey(1) & 0xFF
+            time.sleep(1)
+            key = ord('1')
 
             if key == ord('1') and program_state == "ASTEPTARE":
                 print("Tasta '1' apasata! Incep numaratoarea...")
