@@ -1,9 +1,0 @@
-Audio Transcription - FAILED
-==============================
-
-Source file: recording_20251115_225055.wav
-Error: Could not transcribe audio content
-Possible reasons:
-- Audio quality too low
-- Speech not clear enough
-- Language not supported
